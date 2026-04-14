@@ -1,0 +1,36 @@
+ * Serving Flask app 'crud_alunos'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.17.0.2:5000
+[33mPress CTRL+C to quit[0m
+172.17.0.1 - - [14/Apr/2026 12:31:11] "GET / HTTP/1.1" 200 -
+[middleware] GET / status=200 tempo=0.0002s
+[middleware] GET /alunos status=200 tempo=0.0002s
+172.17.0.1 - - [14/Apr/2026 12:31:11] "GET /alunos HTTP/1.1" 200 -
+[middleware] POST /alunos status=201 tempo=0.0004s
+172.17.0.1 - - [14/Apr/2026 12:31:11] "[35m[1mPOST /alunos HTTP/1.1[0m" 201 -
+[middleware] POST /alunos status=400 tempo=0.0003s
+172.17.0.1 - - [14/Apr/2026 12:31:11] "[31m[1mPOST /alunos HTTP/1.1[0m" 400 -
+[middleware] POST /alunos status=201 tempo=0.0003s
+172.17.0.1 - - [14/Apr/2026 12:31:11] "[35m[1mPOST /alunos HTTP/1.1[0m" 201 -
+[middleware] GET /alunos/GES2 status=200 tempo=0.0001s
+172.17.0.1 - - [14/Apr/2026 12:31:11] "GET /alunos/GES2 HTTP/1.1" 200 -
+[middleware] GET /alunos/ALUNO99999 status=404 tempo=0.0001s
+172.17.0.1 - - [14/Apr/2026 12:31:11] "[33mGET /alunos/ALUNO99999 HTTP/1.1[0m" 404 -
+[middleware] POST /alunos status=201 tempo=0.0002s
+172.17.0.1 - - [14/Apr/2026 12:31:11] "[35m[1mPOST /alunos HTTP/1.1[0m" 201 -
+[middleware] PUT /alunos/GET1 status=200 tempo=0.0002s
+172.17.0.1 - - [14/Apr/2026 12:31:11] "PUT /alunos/GET1 HTTP/1.1" 200 -
+[middleware] PUT /alunos/ALUNO99999 status=404 tempo=0.0001s
+172.17.0.1 - - [14/Apr/2026 12:31:11] "[33mPUT /alunos/ALUNO99999 HTTP/1.1[0m" 404 -
+172.17.0.1 - - [14/Apr/2026 12:31:11] "[35m[1mPOST /alunos HTTP/1.1[0m" 201 -
+[middleware] POST /alunos status=201 tempo=0.0002s
+172.17.0.1 - - [14/Apr/2026 12:31:11] "DELETE /alunos/GEC1 HTTP/1.1" 200 -
+[middleware] DELETE /alunos/GEC1 status=200 tempo=0.0002s
+172.17.0.1 - - [14/Apr/2026 12:31:11] "[33mGET /alunos/GEC1 HTTP/1.1[0m" 404 -
+[middleware] GET /alunos/GEC1 status=404 tempo=0.0002s
+[middleware] DELETE /alunos/ALUNO99999 status=404 tempo=0.0001s
+172.17.0.1 - - [14/Apr/2026 12:31:11] "[33mDELETE /alunos/ALUNO99999 HTTP/1.1[0m" 404 -
+{"5000/tcp":[{"HostIp":"0.0.0.0","HostPort":"5001"},{"HostIp":"::","HostPort":"5001"}]}

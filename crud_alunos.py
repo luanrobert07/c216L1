@@ -1,132 +1,109 @@
+import time
+
+from flask import Flask, g, jsonify, request
+
+app = Flask(__name__)
+
 alunos = {}
 contadores_curso = {}
-contador_matricula = 0
-
 
 def gerar_matricula(curso):
     curso = curso.upper()
-
-    if curso not in contadores_curso:
-        contadores_curso[curso] = 1
-    else:
-        contadores_curso[curso] += 1
-
+    contadores_curso[curso] = contadores_curso.get(curso, 0) + 1
     return f"{curso}{contadores_curso[curso]}"
 
+def normalizar_dados_aluno(dados, obrigatorio=False):
+    nome = dados.get("nome", "").strip()
+    email = dados.get("email", "").strip()
+    curso = dados.get("curso", "").strip().upper()
 
-def cadastrar_aluno():
-    print("\nCadastrar Aluno")
-    nome = input("Nome: ").strip()
-    email = input("Email: ").strip()
-    curso = input("Curso (ex: GES, GEC, GET, GEP): ").strip().upper()
+    if obrigatorio and (not nome or not email or not curso):
+        return None, "Os campos nome, email e curso são obrigatórios."
 
-    matricula = gerar_matricula(curso)
+    return {"nome": nome, "email": email, "curso": curso}, None
 
-    alunos[matricula] = {
-        "nome": nome,
-        "email": email,
-        "curso": curso,
-        "matricula": matricula,
-    }
-
-    print(f"Aluno cadastrado com sucesso! Matrícula: {matricula}")
+def resetar_dados():
+    alunos.clear()
+    contadores_curso.clear()
 
 
+@app.before_request
+def iniciar_requisicao():
+    g.inicio_requisicao = time.perf_counter()
+
+
+@app.after_request
+def registrar_resposta(response):
+    inicio = getattr(g, "inicio_requisicao", time.perf_counter())
+    duracao = time.perf_counter() - inicio
+    print(
+        f"[middleware] {request.method} {request.path} "
+        f"status={response.status_code} tempo={duracao:.4f}s"
+    )
+    return response
+
+
+@app.get("/")
+def healthcheck():
+    return jsonify({"mensagem": "API de alunos em execução"}), 200
+
+@app.get("/alunos")
 def listar_alunos():
-    print("\nLista de Alunos")
+    return jsonify(list(alunos.values())), 200
 
-    if not alunos:
-        print("Nenhum aluno cadastrado.")
-        return
+@app.post("/alunos")
+def cadastrar_aluno():
+    dados = request.get_json(silent=True) or {}
+    aluno, erro = normalizar_dados_aluno(dados, obrigatorio=True)
 
-    for matricula, dados in alunos.items():
-        print(f"\nMatrícula: {dados['matricula']}")
-        print(f"Nome: {dados['nome']}")
-        print(f"Email: {dados['email']}")
-        print(f"Curso: {dados['curso']}")
+    if erro:
+        return jsonify({"erro": erro}), 400
 
+    matricula = gerar_matricula(aluno["curso"])
+    novo_aluno = {**aluno, "matricula": matricula}
+    alunos[matricula] = novo_aluno
 
-def buscar_aluno():
-    print("\nBuscar Aluno")
-    matricula = input("Digite a matrícula do aluno: ").strip().upper()
+    return jsonify(novo_aluno), 201
 
-    if matricula in alunos:
-        dados = alunos[matricula]
-        print(f"\nMatrícula: {dados['matricula']}")
-        print(f"Nome: {dados['nome']}")
-        print(f"Email: {dados['email']}")
-        print(f"Curso: {dados['curso']}")
-    else:
-        print("Aluno não encontrado.")
+@app.get("/alunos/<matricula>")
+def buscar_aluno(matricula):
+    matricula = matricula.upper()
+    aluno = alunos.get(matricula)
 
+    if not aluno:
+        return jsonify({"erro": "Aluno não encontrado."}), 404
 
-def atualizar_aluno():
-    print("\nAtualizar Aluno")
-    matricula = input("Digite a matrícula do aluno: ").strip().upper()
+    return jsonify(aluno), 200
 
-    if matricula in alunos:
-        print("Deixe em branco para manter o valor atual.")
+@app.put("/alunos/<matricula>")
+def atualizar_aluno(matricula):
+    matricula = matricula.upper()
+    aluno = alunos.get(matricula)
 
-        novo_nome = input(f"Novo nome ({alunos[matricula]['nome']}): ").strip()
-        novo_email = input(f"Novo email ({alunos[matricula]['email']}): ").strip()
-        novo_curso = (
-            input(f"Novo curso ({alunos[matricula]['curso']}): ").strip().upper()
-        )
+    if not aluno:
+        return jsonify({"erro": "Aluno não encontrado."}), 404
 
-        if novo_nome:
-            alunos[matricula]["nome"] = novo_nome
-        if novo_email:
-            alunos[matricula]["email"] = novo_email
-        if novo_curso:
-            alunos[matricula]["curso"] = novo_curso
+    dados = request.get_json(silent=True) or {}
+    atualizacoes, _ = normalizar_dados_aluno(dados, obrigatorio=False)
 
-        print("Aluno atualizado com sucesso!")
-    else:
-        print("Aluno não encontrado.")
+    if atualizacoes["nome"]:
+        aluno["nome"] = atualizacoes["nome"]
+    if atualizacoes["email"]:
+        aluno["email"] = atualizacoes["email"]
+    if atualizacoes["curso"]:
+        aluno["curso"] = atualizacoes["curso"]
 
+    return jsonify(aluno), 200
 
-def remover_aluno():
-    print("\nRemover Aluno")
-    matricula = input("Digite a matrícula do aluno: ").strip().upper()
+@app.delete("/alunos/<matricula>")
+def remover_aluno(matricula):
+    matricula = matricula.upper()
+    aluno_removido = alunos.pop(matricula, None)
 
-    if matricula in alunos:
-        del alunos[matricula]
-        print("Aluno removido com sucesso!")
-    else:
-        print("Aluno não encontrado.")
+    if not aluno_removido:
+        return jsonify({"erro": "Aluno não encontrado."}), 404
 
-
-def exibir_menu():
-    print("\nMENU")
-    print("1. Cadastrar aluno")
-    print("2. Listar alunos")
-    print("3. Buscar aluno")
-    print("4. Atualizar aluno")
-    print("5. Remover aluno")
-    print("6. Sair")
-
-
-def main():
-    while True:
-        exibir_menu()
-        opcao = input("Escolha uma opção: ").strip()
-
-        if opcao == "1":
-            cadastrar_aluno()
-        elif opcao == "2":
-            listar_alunos()
-        elif opcao == "3":
-            buscar_aluno()
-        elif opcao == "4":
-            atualizar_aluno()
-        elif opcao == "5":
-            remover_aluno()
-        elif opcao == "6":
-            print("Encerrando o programa...")
-            break
-        else:
-            print("Opção inválida. Tente novamente.")
-
+    return jsonify({"mensagem": "Aluno removido com sucesso."}), 200
 
 if __name__ == "__main__":
-    main()
+    app.run(host="0.0.0.0", port=5000)
