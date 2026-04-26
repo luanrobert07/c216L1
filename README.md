@@ -1,146 +1,108 @@
-# CRUD de Alunos com API HTTP
+# Gerenciador de Alunos com FastAPI
 
-## Descrição
+Projeto da Pratica 4: API CRUD estruturada em camadas, com middlewares, testes automatizados com `TestClient` e execucao via Docker Compose.
 
-Este projeto implementa um CRUD de alunos exposto por API HTTP com Flask.
+## Estrutura
 
-Cada aluno possui:
+```text
+app/
+├── main.py
+├── middlewares/
+│   ├── logging.py
+│   └── custom_header.py
+├── routes/
+│   └── aluno_routes.py
+├── services/
+│   └── aluno_service.py
+└── schemas/
+    └── aluno.py
+tests/
+└── test_alunos.py
+Dockerfile
+docker-compose.yml
+requirements.txt
+pytest.ini
+img/
+```
 
-- `nome`
-- `email`
-- `curso`
-- `matricula`
+## Regras Implementadas
 
-A matrícula é gerada automaticamente por curso no formato `CURSO + sequencial`, como `GES1`, `GES2` e `GEC1`.
+- `POST /api/v1/alunos/`: cadastra aluno.
+- `GET /api/v1/alunos/`: lista alunos.
+- `GET /api/v1/alunos/{aluno_id}`: busca por ID.
+- `PATCH /api/v1/alunos/{aluno_id}`: atualiza dados.
+- `DELETE /api/v1/alunos/{aluno_id}`: remove aluno.
+- `DELETE /api/v1/alunos/`: reseta a lista de alunos.
+- Cursos suportados: `GES` e `GEC`.
+- Matricula gerada automaticamente por curso.
+- ID gerado como `curso + matricula`, por exemplo `GES1`, `GES2`, `GEC1`.
+- IDs nao sao reutilizados apos remocao. O reset limpa a lista, mas os contadores continuam incrementando para manter essa garantia.
 
-## Endpoints
-
-### `GET /`
-
-Healthcheck da aplicação.
-
-### `GET /alunos`
-
-Lista todos os alunos cadastrados.
-
-### `POST /alunos`
-
-Cria um novo aluno.
-
-Exemplo de payload:
+## Exemplo de Aluno
 
 ```json
 {
-  "nome": "Luan Robert",
-  "email": "luan@email.com",
-  "curso": "GES"
+  "id": "GES1",
+  "nome": "Ana Silva",
+  "email": "ana@email.com",
+  "curso": "GES",
+  "matricula": 1
 }
 ```
 
-### `GET /alunos/<matricula>`
-
-Busca um aluno por matrícula.
-
-### `PUT /alunos/<matricula>`
-
-Atualiza nome, email e/ou curso de um aluno existente.
-
-### `DELETE /alunos/<matricula>`
-
-Remove um aluno.
-
-## Middleware
-
-A aplicação possui um middleware em [crud_alunos.py](/home/luan/Documentos/Projetos/Inatel/c216/crud_alunos.py:1) usando `before_request` e `after_request` para registrar:
-
-- método HTTP
-- rota acessada
-- status da resposta
-- tempo de processamento
-
-Exemplo de log:
-
-```text
-[middleware] GET /alunos status=200 tempo=0.0004s
-```
-
-## Execução Local
-
-Criar e ativar o ambiente virtual:
+## Execucao Local
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Subir a API:
+A API fica disponivel em `http://localhost:8000`.
 
-```bash
-python crud_alunos.py
-```
+## Execucao com Docker Compose
 
-## Execução com Docker Compose
-
-Subir a API:
+Com Compose v2:
 
 ```bash
 docker compose up --build api
+docker compose run tests
 ```
 
-Executar os testes:
+Com Compose legado:
 
 ```bash
-docker compose up --build testes
+docker-compose up --build api
+docker-compose run tests
 ```
 
-## Testes de API
-
-Os testes automatizados estão em [tests/test_api.py](/home/luan/Documentos/Projetos/Inatel/c216/tests/test_api.py:1) e cobrem:
-
-- `GET /`
-- `GET /alunos`
-- `POST /alunos` com sucesso
-- `POST /alunos` com erro de validação
-- `GET /alunos/<matricula>` com sucesso
-- `GET /alunos/<matricula>` com `404`
-- `PUT /alunos/<matricula>` com sucesso
-- `PUT /alunos/<matricula>` com `404`
-- `DELETE /alunos/<matricula>` com sucesso
-- `DELETE /alunos/<matricula>` com `404`
-
-Para rodar localmente:
+## Testes
 
 ```bash
-source .venv/bin/activate
-pytest -v tests/test_api.py
+pytest -v
 ```
 
-## Gerando Logs de Evidência
+Os testes usam `fastapi.testclient.TestClient` e cobrem:
 
-Para gerar os logs de build, testes e execução da API:
+- adicao de 3 alunos por curso;
+- listagem de alunos;
+- busca por ID;
+- atualizacao de dados;
+- remocao de aluno;
+- reset da lista;
+- validacao de curso;
+- middleware de header customizado.
 
-```bash
-docker rm -f api-alunos-e2e
-docker build -t api-alunos-local . > evidencias/build.log 2>&1
-docker run -d --name api-alunos-e2e -p 5001:5000 api-alunos-local
-docker run --rm --add-host host.docker.internal:host-gateway -e APP_URL=http://host.docker.internal:5001 api-alunos-local pytest -v tests/test_api.py > evidencias/testes_api.log 2>&1
-docker logs api-alunos-e2e > evidencias/api_execucao.log 2>&1
-echo "\nPortas publicadas:" >> evidencias/api_execucao.log
-docker inspect --format '{{json .NetworkSettings.Ports}}' api-alunos-e2e >> evidencias/api_execucao.log
-```
+## Evidencias
 
-Arquivos gerados:
+Os prints solicitados no enunciado estão salvos na pasta `img/`:
 
-- `evidencias/build.log`
-- `evidencias/testes_api.log`
-- `evidencias/api_execucao.log`
+- resultado dos testes;
+- logs do container contendo as chamadas na API.
+- localhost rodando
 
-## Estrutura
+## Middlewares
 
-- [crud_alunos.py](/home/luan/Documentos/Projetos/Inatel/c216/crud_alunos.py:1): API Flask com CRUD e middleware
-- [Dockerfile](/home/luan/Documentos/Projetos/Inatel/c216/Dockerfile:1): imagem da aplicação
-- [docker-compose.yml](/home/luan/Documentos/Projetos/Inatel/c216/docker-compose.yml:1): orquestração da API e dos testes
-- [tests/test_api.py](/home/luan/Documentos/Projetos/Inatel/c216/tests/test_api.py:1): testes automatizados da API
-- [requirements.txt](/home/luan/Documentos/Projetos/Inatel/c216/requirements.txt:1): dependências do projeto
-- [evidencias](/home/luan/Documentos/Projetos/Inatel/c216/evidencias): logs de build, execução e testes
+- `log_requests`: registra metodo, rota, status e tempo da requisicao.
+- `add_custom_header`: adiciona `X-App-Version: 1.0` em todas as respostas.

@@ -3,25 +3,10 @@ services:
     build: .
     container_name: api-alunos
     ports:
-      - "5000:5000"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import requests; requests.get('http://localhost:5000/', timeout=2).raise_for_status()",
-        ]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
-  testes:
+  tests:
     build: .
-    container_name: api-alunos-testes
-    depends_on:
-      api:
-        condition: service_healthy
-    environment:
-      APP_URL: http://api:5000
-    command: ["pytest", "-v", "tests/test_api.py"]
+    container_name: testes-api-alunos
+    command: pytest -v
