@@ -8,40 +8,40 @@ service = AlunoService()
 
 
 @router.post("/", response_model=Aluno, status_code=status.HTTP_201_CREATED)
-def criar_aluno(aluno: AlunoCreate):
-    return service.criar(aluno)
+async def criar_aluno(aluno: AlunoCreate):
+    return await service.criar(aluno)
 
 
 @router.get("/", response_model=list[Aluno])
-def listar_alunos():
-    return service.listar()
+async def listar_alunos():
+    return await service.listar()
 
 
 @router.get("/{aluno_id}", response_model=Aluno)
-def buscar_aluno(aluno_id: str):
-    aluno = service.buscar_por_id(aluno_id)
+async def buscar_aluno(aluno_id: str):
+    aluno = await service.buscar_por_id(aluno_id)
     if not aluno:
         raise HTTPException(status_code=404, detail="Aluno nao encontrado")
     return aluno
 
 
 @router.patch("/{aluno_id}", response_model=Aluno)
-def atualizar_aluno(aluno_id: str, aluno: AlunoUpdate):
-    atualizado = service.atualizar(aluno_id, aluno)
+async def atualizar_aluno(aluno_id: str, aluno: AlunoUpdate):
+    atualizado = await service.atualizar(aluno_id, aluno)
     if not atualizado:
         raise HTTPException(status_code=404, detail="Aluno nao encontrado")
     return atualizado
 
 
 @router.delete("/{aluno_id}")
-def deletar_aluno(aluno_id: str):
-    sucesso = service.deletar(aluno_id)
+async def deletar_aluno(aluno_id: str):
+    sucesso = await service.deletar(aluno_id)
     if not sucesso:
         raise HTTPException(status_code=404, detail="Aluno nao encontrado")
     return {"mensagem": "Aluno removido com sucesso"}
 
 
 @router.delete("/")
-def resetar_alunos():
-    service.resetar()
+async def resetar_alunos():
+    await service.resetar()
     return {"mensagem": "Lista de alunos resetada com sucesso"}

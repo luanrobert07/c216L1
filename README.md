@@ -1,11 +1,14 @@
-# Gerenciador de Alunos com FastAPI
+# Gerenciador de Alunos com FastAPI e PostgreSQL
 
-Projeto da Pratica 4: API CRUD estruturada em camadas, com middlewares, testes automatizados com `TestClient` e execucao via Docker Compose.
+Projeto da Pratica 5: API CRUD estruturada em camadas, com middlewares, persistencia em PostgreSQL usando `asyncpg`, testes automatizados com `TestClient` e execucao via Docker Compose.
 
 ## Estrutura
 
 ```text
 app/
+├── db/
+│   ├── connection.py
+│   └── init.sql
 ├── main.py
 ├── middlewares/
 │   ├── logging.py
@@ -37,6 +40,7 @@ img/
 - Matricula gerada automaticamente por curso.
 - ID gerado como `curso + matricula`, por exemplo `GES1`, `GES2`, `GEC1`.
 - IDs nao sao reutilizados apos remocao. O reset limpa a lista, mas os contadores continuam incrementando para manter essa garantia.
+- Dados persistidos em PostgreSQL.
 
 ## Exemplo de Aluno
 
@@ -56,10 +60,11 @@ img/
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/alunos_db
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-A API fica disponivel em `http://localhost:8000`.
+A API fica disponivel em `http://localhost:8000`. Para execucao local fora do Docker, mantenha um PostgreSQL rodando e crie as tabelas com `app/db/init.sql`.
 
 ## Execucao com Docker Compose
 
@@ -77,6 +82,13 @@ docker-compose up --build api
 docker-compose run tests
 ```
 
+O Compose sobe dois servicos principais:
+
+- `db`: banco PostgreSQL com database `alunos_db`.
+- `api`: aplicacao FastAPI conectada ao banco pelo `DATABASE_URL`.
+
+O servico `tests` executa a suite automatizada usando o mesmo banco.
+
 ## Testes
 
 ```bash
@@ -90,6 +102,7 @@ Os testes usam `fastapi.testclient.TestClient` e cobrem:
 - busca por ID;
 - atualizacao de dados;
 - remocao de aluno;
+- persistencia no PostgreSQL;
 - reset da lista;
 - validacao de curso;
 - middleware de header customizado.

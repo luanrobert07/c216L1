@@ -1,5 +1,7 @@
+import anyio
 from fastapi.testclient import TestClient
 
+from app.db.connection import get_connection
 from app.main import app
 
 client = TestClient(app)
@@ -14,6 +16,15 @@ def criar_aluno(nome="Aluno Teste", email="aluno@email.com", curso="GES"):
         "/api/v1/alunos/",
         json={"nome": nome, "email": email, "curso": curso},
     )
+
+
+async def buscar_aluno_no_banco(aluno_id: str):
+    conn = await get_connection()
+    try:
+        row = await conn.fetchrow("SELECT * FROM alunos WHERE id=$1", aluno_id)
+        return dict(row) if row else None
+    finally:
+        await conn.close()
 
 
 def test_root_retorna_api_funcionando():
@@ -109,6 +120,19 @@ def test_remover_aluno():
     assert response.status_code == 200
     assert response.json() == {"mensagem": "Aluno removido com sucesso"}
     assert busca.status_code == 404
+
+
+def test_persistencia_no_postgresql():
+    resetar()
+    aluno = criar_aluno("Persistente", "persistente@email.com", "GES").json()
+
+    aluno_no_banco = anyio.run(buscar_aluno_no_banco, aluno["id"])
+
+    assert aluno_no_banco is not None
+    assert aluno_no_banco["id"] == aluno["id"]
+    assert aluno_no_banco["nome"] == "Persistente"
+    assert aluno_no_banco["email"] == "persistente@email.com"
+    assert aluno_no_banco["curso"] == "GES"
 
 
 def test_resetar_lista_de_alunos():
